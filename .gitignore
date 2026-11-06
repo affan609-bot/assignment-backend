@@ -1,5 +1,25 @@
+# Dependencies
 node_modules/
-data/products.json
-uploads/*
-!uploads/.gitkeep
+backend/node_modules/
+admin-panel/node_modules/
+
+# Environment files
 .env
+.env.*
+!.env.example
+
+# Uploaded files
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# Build output
+dist/
+admin-panel/dist/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Editor / OS
+.DS_Store
+Thumbs.db

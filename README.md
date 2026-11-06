@@ -1,146 +1,113 @@
-# Products API + Admin Panel
+# Products Admin (MERN-style)
 
-**Assignment:** Create Products listing and Uploading Routes on Nodejs Backend + Admin Panel
+**Products Listing & File Uploading System with Node.js Backend and Admin Panel**
 
-A small Node.js project with:
+A learning project built step by step.
 
-- a products listing API,
-- an image uploading route,
-- a browser-based admin panel to add, edit and delete products.
+## Stack
 
-No login, no dashboard, no extra modules — only the assignment requirements.
+- Node.js + Express.js (backend)
+- MongoDB + Mongoose (database)
+- JWT + bcrypt (admin authentication)
+- Multer (single + multiple image uploads)
+- React + Vite (admin panel)
+- Axios (API calls)
+- Plain CSS (admin panel styling)
 
-## Tech stack
+## Build progress
 
-- Node.js (ES modules)
-- Express 5
-- Multer 2 for image uploads
-- JSON file storage (created automatically)
+| Step | Topic | Status |
+| --- | --- | --- |
+| 1 | Project setup | ✅ Done |
+| 2 | Backend structure | ⏳ Pending |
+| 3 | MongoDB models | ⏳ Pending |
+| 4 | Admin authentication | ⏳ Pending |
+| 5 | Products CRUD | ⏳ Pending |
+| 6 | Multer file uploads | ⏳ Pending |
+| 7 | Postman testing | ⏳ Pending |
+| 8 | React admin panel | ⏳ Pending |
+| 9 | Axios integration | ⏳ Pending |
+| 10 | Final testing | ⏳ Pending |
 
-## Setup
+## Planned project structure
 
-```bash
-npm install
-npm start
+```text
+backend/
+  src/
+    config/          MongoDB connection
+    models/          Admin + Product schemas
+    controllers/     Request logic
+    routes/          Express routes
+    middleware/      Auth, upload, errors
+    utils/           Helpers
+    app.js           Express app
+    server.js        Server entry point
+  uploads/           Uploaded product images
+  scripts/           Admin creation + API tests
+  .env.example
+  package.json
+admin-panel/
+  src/
+    api/             Axios instance
+    components/      Reusable UI
+    context/         Auth state
+    pages/           Login, Dashboard, Products, Uploads
+    App.jsx
+    main.jsx
+  index.html
+  vite.config.js
+  package.json
+postman/
+  Products-API.postman_collection.json
+README.md
 ```
 
-Open **http://localhost:4000**
-
-The first run creates `data/products.json` with six demo products and an empty `uploads/` folder.
-
-For auto-restart while editing:
+## Step 1: Run the backend
 
 ```bash
+cd backend
+npm install
+copy .env.example .env
 npm run dev
 ```
 
-## Routes
+Open:
 
-| Method | Route | Description |
-| --- | --- | --- |
-| `GET` | `/api/products` | List all products. Optional search: `/api/products?search=lamp` |
-| `GET` | `/api/products/:id` | Get one product |
-| `POST` | `/api/products` | Create a product |
-| `PUT` | `/api/products/:id` | Update a product |
-| `DELETE` | `/api/products/:id` | Delete a product and its uploaded image |
-| `POST` | `/api/uploads` | Upload an image (`multipart/form-data`, field name `image`) |
-| `GET` | `/api/health` | Health check |
-
-All responses use a simple JSON shape:
-
-```json
-{ "success": true, "data": {} }
+```text
+http://localhost:5000/api/health
 ```
 
-### Create a product
-
-```bash
-curl -X POST http://localhost:4000/api/products \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "Studio Desk Lamp",
-    "description": "Warm, dimmable task light.",
-    "price": 79.5,
-    "stock": 14
-  }'
-```
-
-### Upload an image
-
-```bash
-curl -X POST http://localhost:4000/api/uploads \
-  -F "image=@./lamp.jpg"
-```
-
-Response:
+Expected response:
 
 ```json
 {
   "success": true,
-  "data": {
-    "url": "/uploads/1712345678901-a1b2c3d4.jpg",
-    "filename": "1712345678901-a1b2c3d4.jpg",
-    "size": 48213
-  }
+  "message": "Products Admin API is running.",
+  "environment": "development",
+  "timestamp": "..."
 }
 ```
 
-Send the returned `url` as `imageUrl` when creating or updating a product.
+## MongoDB note
 
-## Admin panel
+This step does not connect to MongoDB yet. In the next steps we will add the
+connection and models. Make sure MongoDB is running locally, or use a MongoDB
+Atlas connection string in `MONGO_URI`.
 
-The admin panel is served from `/` and lets you:
+## Environment variables
 
-- see all products in a responsive grid,
-- search products by name,
-- add a product with name, price, stock and description,
-- upload or replace a product image,
-- edit or delete an existing product.
+All values live in `backend/.env` (copied from `backend/.env.example`):
 
-Images are uploaded through the separate `/api/uploads` route and then attached to the product, so the uploading route is clearly separated from product CRUD.
+| Variable | Purpose |
+| --- | --- |
+| `PORT` | Express server port |
+| `NODE_ENV` | Development or production |
+| `CLIENT_URL` | React admin panel origin for CORS |
+| `MONGO_URI` | MongoDB connection string |
+| `JWT_SECRET` | Secret used to sign JWT tokens |
+| `JWT_EXPIRES_IN` | Token lifetime |
+| `ADMIN_NAME` | Name used by the admin creation script |
+| `ADMIN_EMAIL` | Email used by the admin creation script |
+| `ADMIN_PASSWORD` | Password used by the admin creation script |
 
-## Upload rules
-
-- Accepted types: JPEG, PNG, WebP, GIF, AVIF
-- Maximum size: 5 MB (configurable with `MAX_UPLOAD_MB`)
-- Field name: `image`
-- One file per request
-- Filenames are generated by the server; client filenames are not trusted
-- Images are stored in `uploads/` and served from `/uploads/<filename>`
-- Replacing an image or deleting a product removes the old managed file
-
-## Project structure
-
-```text
-server.js                         Starts the Express server
-src/
-  app.js                          App setup, static files and API routes
-  upload.js                       Multer storage and image validation
-  store.js                        JSON product storage and image cleanup
-  routes/
-    products.routes.js            Products listing and CRUD routes
-    upload.routes.js              Image uploading route
-public/
-  index.html                      Admin panel
-  styles.css                      Admin panel styles
-  app.js                          Admin panel logic
-data/products.json                Created automatically at runtime
-uploads/                          Uploaded images
-```
-
-## Configuration
-
-Environment variables are optional:
-
-| Variable | Default | Description |
-| --- | --- | --- |
-| `PORT` | `4000` | HTTP port |
-| `MAX_UPLOAD_MB` | `5` | Maximum image size in MB |
-
-Example on Windows PowerShell:
-
-```powershell
-$env:PORT=5000
-npm start
-```
-"# assignment-backend" 
+> Never commit `backend/.env`.
