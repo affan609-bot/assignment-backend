@@ -19,7 +19,7 @@ A learning project built step by step.
 | Step | Topic | Status |
 | --- | --- | --- |
 | 1 | Project setup | ✅ Done |
-| 2 | Backend structure | ⏳ Pending |
+| 2 | Backend structure | ✅ Done |
 | 3 | MongoDB models | ⏳ Pending |
 | 4 | Admin authentication | ⏳ Pending |
 | 5 | Products CRUD | ⏳ Pending |
@@ -90,9 +90,43 @@ Expected response:
 
 ## MongoDB note
 
-This step does not connect to MongoDB yet. In the next steps we will add the
-connection and models. Make sure MongoDB is running locally, or use a MongoDB
-Atlas connection string in `MONGO_URI`.
+The server connects to MongoDB before it starts listening. Make sure MongoDB is
+running locally, or use a MongoDB Atlas connection string in `MONGO_URI`.
+
+If the connection fails, the server exits with a clear error instead of starting
+in a broken state.
+
+## Step 2: Backend structure
+
+```text
+backend/src/
+  config/db.js                  MongoDB connection
+  utils/asyncHandler.js         Async controller error wrapper
+  utils/ApiError.js             Status code + message helper
+  middleware/error.middleware.js 404 + centralized error handler
+  app.js                        Express app configuration
+  server.js                     DB connect, listen, graceful shutdown
+```
+
+Error responses always use the same shape:
+
+```json
+{
+  "success": false,
+  "message": "Route not found: GET /api/nope"
+}
+```
+
+Common errors are converted automatically:
+
+| Error | Status |
+| --- | --- |
+| Route not found | 404 |
+| Mongoose validation | 400 |
+| Invalid ObjectId | 400 |
+| Duplicate unique field | 409 |
+| Multer file too large | 400 |
+| Invalid / expired JWT | 401 |
 
 ## Environment variables
 

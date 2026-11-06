@@ -1,8 +1,12 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
+import { notFound, errorHandler } from './middleware/error.middleware.js';
 
 const app = express();
+
+// Express apna version header me nahi bhejega (small security improvement).
+app.disable('x-powered-by');
 
 const allowedOrigins = (process.env.CLIENT_URL || 'http://localhost:5173')
   .split(',')
@@ -32,25 +36,9 @@ app.get('/api/health', (req, res) => {
 });
 
 // Unknown API routes return JSON instead of an HTML error page.
-app.use('/api', (req, res) => {
-  res.status(404).json({
-    success: false,
-    message: 'API route not found.',
-  });
-});
+app.use(notFound);
 
-// Basic error handler. It will be extended in the backend-structure step.
-app.use((error, req, res, next) => {
-  const status = error.statusCode || error.status || 500;
-
-  if (status >= 500) {
-    console.error(error);
-  }
-
-  res.status(status).json({
-    success: false,
-    message: status >= 500 ? 'Internal server error.' : error.message,
-  });
-});
+// Saare errors yahan se ek hi format me return honge.
+app.use(errorHandler);
 
 export default app;
