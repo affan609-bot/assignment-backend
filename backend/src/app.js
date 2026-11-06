@@ -1,19 +1,24 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
+import cookieParser from 'cookie-parser';
 import { notFound, errorHandler } from './middleware/error.middleware.js';
+import authRoutes from './routes/auth.routes.js';
+import productsRoutes from './routes/products.routes.js';
 
 const app = express();
 
-// Express apna version header me nahi bhejega (small security improvement).
 app.disable('x-powered-by');
+
+// Security headers.
+app.use(helmet());
 
 const allowedOrigins = (process.env.CLIENT_URL || 'http://localhost:5173')
   .split(',')
   .map((origin) => origin.trim())
   .filter(Boolean);
 
-// Allow the React admin panel to call this API.
 app.use(
   cors({
     origin: allowedOrigins,
@@ -21,11 +26,10 @@ app.use(
   })
 );
 
-// Parse JSON and form bodies.
+app.use(cookieParser());
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// Health check: useful to confirm the server is running.
 app.get('/api/health', (req, res) => {
   res.status(200).json({
     success: true,
@@ -35,10 +39,13 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Unknown API routes return JSON instead of an HTML error page.
-app.use(notFound);
+// Auth routes (signup, login, logout, me)
+app.use('/api/auth', authRoutes);
 
-// Saare errors yahan se ek hi format me return honge.
+// Products routes (public reads, protected writes)
+app.use('/api/products', productsRoutes);
+
+app.use(notFound);
 app.use(errorHandler);
 
 export default app;
