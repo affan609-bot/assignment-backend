@@ -21,6 +21,7 @@ const state = {
   removeImage: false,
   selectedFile: null,
   objectUrl: '',
+  firstLoad: true,
 };
 
 const els = {
@@ -31,18 +32,25 @@ const els = {
   stock: $('product-stock'),
   description: $('product-description'),
   image: $('product-image'),
+  fileDrop: $('file-drop'),
+  dropTitle: $('drop-title'),
   preview: $('preview'),
   previewImage: $('preview-image'),
   previewLabel: $('preview-label'),
   removeImage: $('remove-image'),
   formTitle: $('form-title'),
   formSubtitle: $('form-subtitle'),
+  formChip: $('form-chip'),
   submit: $('submit-btn'),
   cancel: $('cancel-edit'),
   message: $('form-message'),
   products: $('products'),
   count: $('product-count'),
   search: $('search'),
+  refresh: $('refresh'),
+  statTotal: $('stat-total'),
+  statInStock: $('stat-instock'),
+  statValue: $('stat-value'),
   toast: $('toast'),
 };
 
@@ -119,13 +127,56 @@ function hideMessage() {
   els.message.hidden = true;
 }
 
+/* Stats --------------------------------------------------------- */
+function updateStats(products) {
+  const inStock = products.filter((product) => product.stock > 0).length;
+  const value = products.reduce(
+    (total, product) => total + Number(product.price || 0) * Number(product.stock || 0),
+    0
+  );
+
+  els.statTotal.textContent = products.length;
+  els.statInStock.textContent = inStock;
+  els.statValue.textContent = money.format(value);
+  els.statValue.classList.add('money');
+}
+
+async function loadStats() {
+  try {
+    const payload = await request('/api/products');
+    updateStats(payload.data);
+  } catch {
+    /* The grid already shows connection errors. */
+  }
+}
+
 /* Products list ------------------------------------------------- */
 let loadToken = 0;
 
-async function loadProducts() {
+function renderSkeleton(count = 6) {
+  els.products.innerHTML = Array.from(
+    { length: count },
+    () => `
+      <div class="skeleton-card" aria-hidden="true">
+        <div class="skeleton skeleton-image"></div>
+        <div class="skeleton-body">
+          <div class="skeleton skeleton-line w-70"></div>
+          <div class="skeleton skeleton-line"></div>
+          <div class="skeleton skeleton-line w-40"></div>
+        </div>
+      </div>`
+  ).join('');
+}
+
+async function loadProducts({ initial = false } = {}) {
   const token = ++loadToken;
   const search = els.search.value.trim();
 
+  if (initial) {
+    renderSkeleton();
+  } else {
+    els.products.classList.add('is-loading');
+  }
   els.count.textContent = 'Loading…';
 
   try {
@@ -134,15 +185,28 @@ async function loadProducts() {
 
     state.products = payload.data;
     renderProducts(payload.data);
-    els.count.textContent = `${payload.count} product${payload.count === 1 ? '' : 's'}`;
+
+    const label = `${payload.count} product${payload.count === 1 ? '' : 's'}`;
+    els.count.textContent = search ? `${label} matching “${search}”` : label;
   } catch (error) {
     if (token !== loadToken) return;
+
     state.products = [];
     els.count.textContent = 'Could not load products';
-    els.products.innerHTML = `<div class="empty"><strong>Something went wrong</strong><span>${escapeHtml(
-      error.message
-    )}</span></div>`;
+    els.products.innerHTML = `<div class="empty">
+      <span class="empty-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="9" />
+          <path d="M12 8v4" />
+          <path d="M12 16h.01" />
+        </svg>
+      </span>
+      <strong>Something went wrong</strong>
+      <span>${escapeHtml(error.message)}</span>
+    </div>`;
     showToast(error.message, 'error');
+  } finally {
+    if (token === loadToken) els.products.classList.remove('is-loading');
   }
 }
 
@@ -150,6 +214,13 @@ function renderProducts(products) {
   if (!products.length) {
     const searching = Boolean(els.search.value.trim());
     els.products.innerHTML = `<div class="empty">
+      <span class="empty-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 8.4 12 3 3 8.4v7.2L12 21l9-5.4V8.4Z" />
+          <path d="m3 8.4 9 5.4 9-5.4" />
+          <path d="M12 21v-7.2" />
+        </svg>
+      </span>
       <strong>${searching ? 'No products match your search' : 'No products yet'}</strong>
       <span>${searching ? 'Try a different search term.' : 'Add your first product using the form.'}</span>
     </div>`;
@@ -219,6 +290,31 @@ function updatePreview() {
     els.preview.hidden = true;
     els.previewImage.removeAttribute('src');
   }
+
+  els.dropTitle.textContent = state.selectedFile
+    ? 'Choose a different image'
+    : 'Drop an image here';
+  els.fileDrop.classList.toggle('has-file', Boolean(state.selectedFile));
+}
+
+function validateAndUseFile(file) {
+  if (!ALLOWED_TYPES.includes(file.type)) {
+    showToast('Choose a JPG, PNG, WebP, GIF or AVIF image.', 'error');
+    els.image.value = '';
+    return;
+  }
+
+  if (file.size > MAX_IMAGE_BYTES) {
+    showToast('Image must be 5 MB or smaller.', 'error');
+    els.image.value = '';
+    return;
+  }
+
+  clearSelectedFile();
+  state.selectedFile = file;
+  state.removeImage = false;
+  state.objectUrl = URL.createObjectURL(file);
+  updatePreview();
 }
 
 /* Form --------------------------------------------------------- */
@@ -241,6 +337,7 @@ function resetForm() {
   els.id.value = '';
   els.formTitle.textContent = 'Add product';
   els.formSubtitle.textContent = 'Create a product and upload its image.';
+  els.formChip.textContent = 'New';
   els.submit.textContent = 'Add product';
   els.cancel.hidden = true;
 
@@ -261,6 +358,7 @@ function startEdit(product) {
   els.description.value = product.description || '';
   els.formTitle.textContent = 'Edit product';
   els.formSubtitle.textContent = 'Update the details or replace the image.';
+  els.formChip.textContent = `Editing #${product.id}`;
   els.submit.textContent = 'Save changes';
   els.cancel.hidden = false;
 
@@ -276,7 +374,7 @@ async function deleteProduct(product) {
   try {
     await request(`/api/products/${product.id}`, { method: 'DELETE' });
     if (state.editingId === product.id) resetForm();
-    await loadProducts();
+    await Promise.all([loadProducts(), loadStats()]);
     showToast('Product deleted.', 'success');
   } catch (error) {
     showToast(error.message, 'error');
@@ -344,7 +442,7 @@ els.form.addEventListener('submit', async (event) => {
     });
 
     resetForm();
-    await loadProducts();
+    await Promise.all([loadProducts(), loadStats()]);
     showToast(editing ? 'Product updated.' : 'Product added.', 'success');
   } catch (error) {
     const fieldMessage = error.errors ? Object.values(error.errors)[0] : '';
@@ -357,25 +455,27 @@ els.form.addEventListener('submit', async (event) => {
 
 els.image.addEventListener('change', () => {
   const file = els.image.files?.[0];
-  if (!file) return;
+  if (file) validateAndUseFile(file);
+});
 
-  if (!ALLOWED_TYPES.includes(file.type)) {
-    showToast('Choose a JPG, PNG, WebP, GIF or AVIF image.', 'error');
-    els.image.value = '';
-    return;
-  }
+['dragenter', 'dragover'].forEach((eventName) => {
+  els.fileDrop.addEventListener(eventName, (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    els.fileDrop.classList.add('is-dragging');
+  });
+});
 
-  if (file.size > MAX_IMAGE_BYTES) {
-    showToast('Image must be 5 MB or smaller.', 'error');
-    els.image.value = '';
-    return;
-  }
+['dragleave', 'dragend', 'drop'].forEach((eventName) => {
+  els.fileDrop.addEventListener(eventName, () => {
+    els.fileDrop.classList.remove('is-dragging');
+  });
+});
 
-  clearSelectedFile();
-  state.selectedFile = file;
-  state.removeImage = false;
-  state.objectUrl = URL.createObjectURL(file);
-  updatePreview();
+els.fileDrop.addEventListener('drop', (event) => {
+  event.preventDefault();
+  const file = event.dataTransfer?.files?.[0];
+  if (file) validateAndUseFile(file);
 });
 
 els.removeImage.addEventListener('click', () => {
@@ -415,6 +515,20 @@ els.search.addEventListener('input', () => {
   searchTimer = setTimeout(loadProducts, 250);
 });
 
+els.search.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape' && els.search.value) {
+    els.search.value = '';
+    loadProducts();
+  }
+});
+
+els.refresh.addEventListener('click', async () => {
+  els.refresh.classList.add('is-spinning');
+  await Promise.allSettled([loadProducts(), loadStats()]);
+  setTimeout(() => els.refresh.classList.remove('is-spinning'), 400);
+});
+
 /* Start -------------------------------------------------------- */
 updatePreview();
-loadProducts();
+loadProducts({ initial: true });
+loadStats();
