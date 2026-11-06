@@ -1,5 +1,6 @@
 import Product from '../models/Product.js';
 import ApiError from '../utils/ApiError.js';
+import { deleteFile, deleteFiles } from '../utils/file.js';
 
 const validateProduct = (body, { partial = false } = {}) => {
   const errors = [];
@@ -111,6 +112,36 @@ export const patchProduct = async (req, res) => {
 export const deleteProduct = async (req, res) => {
   const product = await Product.findByIdAndDelete(req.params.id);
   if (!product) throw ApiError.notFound('Product not found.');
-  // Image file deletion will be added in upload phase.
+  // Delete associated image files from disk.
+  deleteFiles(product.images.map((img) => img.filename));
   res.json({ success: true, message: 'Product deleted.', data: product });
+};
+
+// POST /api/products/:id/images  (protected) - append images
+export const uploadProductImages = async (req, res) => {
+  const product = await Product.findById(req.params.id);
+  if (!product) throw ApiError.notFound('Product not found.');
+  if (!req.files || req.files.length === 0) {
+    throw ApiError.badRequest('No images uploaded.');
+  }
+  const newImages = req.files.map((f) => ({
+    url: `/uploads/${f.filename}`,
+    filename: f.filename,
+  }));
+  product.images.push(...newImages);
+  await product.save();
+  res.status(201).json({ success: true, data: product });
+};
+
+// DELETE /api/products/:id/images/:filename  (protected)
+export const deleteProductImage = async (req, res) => {
+  const product = await Product.findById(req.params.id);
+  if (!product) throw ApiError.notFound('Product not found.');
+  const { filename } = req.params;
+  const index = product.images.findIndex((img) => img.filename === filename);
+  if (index === -1) throw ApiError.notFound('Image not found on product.');
+  product.images.splice(index, 1);
+  await product.save();
+  deleteFile(filename);
+  res.json({ success: true, message: 'Image deleted.', data: product });
 };
