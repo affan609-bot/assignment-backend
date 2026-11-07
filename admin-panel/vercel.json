@@ -1,5 +1,25 @@
 {
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "services": {
+    "admin-panel": {
+      "root": "admin-panel",
+      "framework": "vite"
+    },
+    "backend": {
+      "root": "backend",
+      "framework": "express"
+    },
+    "phase-2-express": {
+      "root": "practice/phase-2-express",
+      "framework": "express"
+    }
+  },
   "rewrites": [
-    { "source": "/(.*)", "destination": "/index.html" }
+    {
+      "source": "/(.*)",
+      "destination": {
+        "service": "backend"
+      }
+    }
   ]
 }
