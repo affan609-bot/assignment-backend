@@ -1,32 +1,56 @@
 import mongoose from 'mongoose';
 
+let cached = global.mongoose;
+if (!cached) {
+  cached = global.mongoose = { conn: null, promise: null };
+}
+
 /**
- * MongoDB connect karta hai.
- * Server sirf tab start hoga jab ye function successfully complete ho.
+ * Cached MongoDB connection (important for serverless/Vercel).
+ * Reuses an existing connection instead of opening a new one per request.
  */
 const connectDB = async () => {
   const mongoUri = process.env.MONGO_URI;
 
   if (!mongoUri) {
-    throw new Error('MONGO_URI is missing. Add it to backend/.env');
+    throw new Error('MONGO_URI is missing. Add it to backend/.env or Vercel env.');
   }
 
-  mongoose.set('strictQuery', true);
+  if (cached.conn) {
+    return cached.conn;
+  }
 
-  // 10 second tak try karega, phir clear error dega.
-  const connection = await mongoose.connect(mongoUri, {
-    serverSelectionTimeoutMS: 10000,
-  });
+  if (!cached.promise) {
+    mongoose.set('strictQuery', true);
+    cached.promise = mongoose
+      .connect(mongoUri, {
+        serverSelectionTimeoutMS: 10000,
+        bufferCommands: false,
+      })
+      .then((conn) => {
+        console.log(`MongoDB connected: ${conn.connection.host}/${conn.connection.name}`);
+        return conn;
+      })
+      .catch((err) => {
+        cached.promise = null;
+        throw err;
+      });
+  }
 
-  console.log(
-    `MongoDB connected: ${connection.connection.host}/${connection.connection.name}`
-  );
+  try {
+    cached.conn = await cached.promise;
+  } catch (err) {
+    cached.promise = null;
+    throw err;
+  }
 
   mongoose.connection.on('disconnected', () => {
     console.warn('MongoDB disconnected.');
+    cached.conn = null;
+    cached.promise = null;
   });
 
-  return connection;
+  return cached.conn;
 };
 
 export default connectDB;

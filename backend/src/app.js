@@ -5,6 +5,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import { notFound, errorHandler } from './middleware/error.middleware.js';
+import connectDB from './config/db.js';
 import authRoutes from './routes/auth.routes.js';
 import productsRoutes from './routes/products.routes.js';
 import uploadRoutes from './routes/upload.routes.js';
@@ -31,6 +32,21 @@ app.use(
 app.use(cookieParser());
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true }));
+
+// Ensure MongoDB is connected (cached) before handling requests.
+// Critical for serverless (Vercel) where server.js lifecycle differs.
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Database connection failed.',
+      error: error.message,
+    });
+  }
+});
 
 app.get('/api/health', (req, res) => {
   res.status(200).json({
