@@ -6,7 +6,7 @@ export default function Login() {
   const { login, signup } = useAuth();
   const navigate = useNavigate();
   const [mode, setMode] = useState('login');
-  const [form, setForm] = useState({ name: 'Store Admin', email: 'admin@example.com', password: 'Admin@12345' });
+  const [form, setForm] = useState({ name: 'Affan', email: 'affan@gmail.com', password: 'affan123' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
