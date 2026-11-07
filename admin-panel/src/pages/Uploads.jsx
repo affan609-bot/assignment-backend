@@ -75,12 +75,11 @@ export default function Uploads() {
       {loading ? <div className="empty">Loading...</div> : files.length === 0 ? <div className="empty">No uploads yet.</div> : (
         <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
           <table className="table">
-            <thead><tr><th>Preview</th><th>File Name</th><th>Original</th><th>Type</th><th>Size</th><th>Actions</th></tr></thead>
+            <thead><tr><th>Preview</th><th>Original Name</th><th>Type</th><th>Size</th><th>Actions</th></tr></thead>
             <tbody>
               {files.map((f) => (
                 <tr key={f._id}>
-                  <td><img src={f.path} alt={f.filename} /></td>
-                  <td>{f.filename}</td>
+                  <td><img src={f.url} alt={f.originalName} /></td>
                   <td>{f.originalName}</td>
                   <td>{f.mimetype}</td>
                   <td>{formatSize(f.size)}</td>

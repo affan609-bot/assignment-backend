@@ -27,6 +27,6 @@ router.delete('/:id', protect, adminOnly, asyncHandler(deleteProduct));
 
 // Product images (protected)
 router.post('/:id/images', protect, adminOnly, multipleImages, asyncHandler(uploadProductImages));
-router.delete('/:id/images/:filename', protect, adminOnly, asyncHandler(deleteProductImage));
+router.delete('/:id/images/:imageId', protect, adminOnly, asyncHandler(deleteProductImage));
 
 export default router;

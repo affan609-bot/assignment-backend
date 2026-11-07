@@ -34,11 +34,11 @@ const productSchema = new mongoose.Schema(
       default: 0,
       min: [0, 'Stock cannot be negative.'],
     },
-    // Multiple images support (Multer phase). Each entry: { url, filename }
+    // Multiple images (Cloudinary). Each entry: { url, publicId }
     images: [
       {
         url: { type: String, required: true },
-        filename: { type: String, required: true },
+        publicId: { type: String, required: true },
       },
     ],
     // Who created it (admin). Filled in auth phase.

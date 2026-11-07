@@ -1,6 +1,22 @@
 import Product from '../models/Product.js';
 import ApiError from '../utils/ApiError.js';
-import { deleteFile, deleteFiles } from '../utils/file.js';
+import cloudinary, { isConfigured } from '../config/cloudinary.js';
+import { Readable } from 'node:stream';
+
+const uploadBuffer = (buffer) =>
+  new Promise((resolve, reject) => {
+    if (!isConfigured()) {
+      return reject(new ApiError(500, 'Cloudinary is not configured. Set CLOUDINARY_* in .env'));
+    }
+    const stream = cloudinary.uploader.upload_stream(
+      { folder: 'products-admin/products', resource_type: 'image' },
+      (error, result) => {
+        if (error) reject(error);
+        else resolve(result);
+      }
+    );
+    Readable.from(buffer).pipe(stream);
+  });
 
 const validateProduct = (body, { partial = false } = {}) => {
   const errors = [];
@@ -112,8 +128,10 @@ export const patchProduct = async (req, res) => {
 export const deleteProduct = async (req, res) => {
   const product = await Product.findByIdAndDelete(req.params.id);
   if (!product) throw ApiError.notFound('Product not found.');
-  // Delete associated image files from disk.
-  deleteFiles(product.images.map((img) => img.filename));
+  // Delete associated images from Cloudinary.
+  for (const img of product.images) {
+    try { await cloudinary.uploader.destroy(img.publicId); } catch (e) { console.error(e.message); }
+  }
   res.json({ success: true, message: 'Product deleted.', data: product });
 };
 
@@ -124,24 +142,25 @@ export const uploadProductImages = async (req, res) => {
   if (!req.files || req.files.length === 0) {
     throw ApiError.badRequest('No images uploaded.');
   }
-  const newImages = req.files.map((f) => ({
-    url: `/uploads/${f.filename}`,
-    filename: f.filename,
-  }));
+  const newImages = [];
+  for (const f of req.files) {
+    const result = await uploadBuffer(f.buffer);
+    newImages.push({ url: result.secure_url, publicId: result.public_id });
+  }
   product.images.push(...newImages);
   await product.save();
   res.status(201).json({ success: true, data: product });
 };
 
-// DELETE /api/products/:id/images/:filename  (protected)
+// DELETE /api/products/:id/images/:imageId  (protected)
 export const deleteProductImage = async (req, res) => {
   const product = await Product.findById(req.params.id);
   if (!product) throw ApiError.notFound('Product not found.');
-  const { filename } = req.params;
-  const index = product.images.findIndex((img) => img.filename === filename);
-  if (index === -1) throw ApiError.notFound('Image not found on product.');
-  product.images.splice(index, 1);
+  const image = product.images.id(req.params.imageId);
+  if (!image) throw ApiError.notFound('Image not found on product.');
+  const publicId = image.publicId;
+  product.images.pull({ _id: req.params.imageId });
   await product.save();
-  deleteFile(filename);
+  try { await cloudinary.uploader.destroy(publicId); } catch (e) { console.error(e.message); }
   res.json({ success: true, message: 'Image deleted.', data: product });
 };

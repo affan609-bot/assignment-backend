@@ -44,9 +44,6 @@ app.get('/api/health', (req, res) => {
 // Auth routes (signup, login, logout, me)
 app.use('/api/auth', authRoutes);
 
-// Serve uploaded files publicly (images viewable)
-app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
-
 // Products routes (public reads, protected writes)
 app.use('/api/products', productsRoutes);
 

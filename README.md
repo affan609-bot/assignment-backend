@@ -1,6 +1,6 @@
-# Products Admin (MERN-style)
+# ProStore Admin
 
-**Products Listing & File Uploading System with Node.js Backend and Admin Panel**
+**Product Management & Media Upload System (Full-stack learning project)**
 
 A learning project built step by step.
 

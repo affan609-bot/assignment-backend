@@ -2,9 +2,9 @@ import mongoose from 'mongoose';
 
 const uploadSchema = new mongoose.Schema(
   {
-    filename: { type: String, required: true },
     originalName: { type: String, required: true },
-    path: { type: String, required: true }, // URL path like /uploads/<filename>
+    url: { type: String, required: true }, // Cloudinary secure_url
+    publicId: { type: String, required: true }, // Cloudinary public_id
     mimetype: { type: String, required: true },
     size: { type: Number, required: true },
     uploadedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'Admin' },

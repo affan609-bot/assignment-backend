@@ -12,7 +12,7 @@ export default function Sidebar() {
 
   return (
     <aside className="sidebar">
-      <h2>Products Admin</h2>
+      <h2>ProStore Admin</h2>
       <NavLink to="/" end className={({ isActive }) => (isActive ? 'active' : '')}>Dashboard</NavLink>
       <NavLink to="/products" className={({ isActive }) => (isActive ? 'active' : '')}>Products</NavLink>
       <NavLink to="/products/new" className={({ isActive }) => (isActive ? 'active' : '')}>Add Product</NavLink>
