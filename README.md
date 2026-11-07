@@ -20,14 +20,14 @@ A learning project built step by step.
 | --- | --- | --- |
 | 1 | Project setup | ✅ Done |
 | 2 | Backend structure | ✅ Done |
-| 3 | MongoDB models | ⏳ Pending |
-| 4 | Admin authentication | ⏳ Pending |
-| 5 | Products CRUD | ⏳ Pending |
-| 6 | Multer file uploads | ⏳ Pending |
-| 7 | Postman testing | ⏳ Pending |
-| 8 | React admin panel | ⏳ Pending |
-| 9 | Axios integration | ⏳ Pending |
-| 10 | Final testing | ⏳ Pending |
+| 3 | MongoDB models | ✅ Done |
+| 4 | Admin authentication | ✅ Done |
+| 5 | Products CRUD | ✅ Done |
+| 6 | Multer file uploads | ✅ Done |
+| 7 | Postman testing | ✅ Done (guide in README) |
+| 8 | React admin panel | ✅ Done |
+| 9 | Axios integration | ✅ Done |
+| 10 | Final testing | ✅ Done (automated scripts) |
 
 ## Planned project structure
 
@@ -61,6 +61,23 @@ postman/
   Products-API.postman_collection.json
 README.md
 ```
+
+## Step 2: Run the admin panel
+
+```bash
+cd admin-panel
+npm install
+npm run dev
+```
+
+Open:
+
+```text
+http://localhost:5173
+```
+
+The Vite dev server proxies `/api` and `/uploads` to `http://localhost:5000`,
+so the backend must be running too.
 
 ## Step 1: Run the backend
 
