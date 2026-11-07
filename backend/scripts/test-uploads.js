@@ -8,7 +8,7 @@ const png = readFileSync('C:/Users/Administrator/AppData/Local/Temp/opencode/tes
 const loginRes = await fetch(`${base}/api/auth/login`, {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ email: 'admin@example.com', password: 'Admin@12345' }),
+  body: JSON.stringify({ email: 'affan@gmail.com', password: 'affan123' }),
 });
 const login = await loginRes.json();
 const token = login.token;
@@ -23,7 +23,7 @@ const singleRes = await fetch(`${base}/api/uploads/single`, {
   body: form1,
 });
 const single = await singleRes.json();
-console.log('single upload:', singleRes.status, single.data?.filename);
+console.log('single upload:', singleRes.status, single.data?.url);
 
 // Multiple upload
 const form2 = new FormData();

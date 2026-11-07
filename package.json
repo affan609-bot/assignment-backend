@@ -1,0 +1,14 @@
+{
+  "name": "prostore-admin",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently -n backend,admin -c blue,green \"npm --prefix backend run dev\" \"npm --prefix admin-panel run dev\"",
+    "dev:backend": "npm --prefix backend run dev",
+    "dev:admin": "npm --prefix admin-panel run dev",
+    "build:admin": "npm --prefix admin-panel run build"
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.0"
+  }
+}

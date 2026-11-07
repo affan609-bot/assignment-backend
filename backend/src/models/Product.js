@@ -39,6 +39,7 @@ const productSchema = new mongoose.Schema(
       {
         url: { type: String, required: true },
         publicId: { type: String, required: true },
+        storage: { type: String, enum: ['cloudinary', 'local'], default: 'cloudinary' },
       },
     ],
     // Who created it (admin). Filled in auth phase.
