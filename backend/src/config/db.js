@@ -10,10 +10,10 @@ if (!cached) {
  * Reuses an existing connection instead of opening a new one per request.
  */
 const connectDB = async () => {
-  const mongoUri = process.env.MONGO_URI;
+  const mongoUri = process.env.MONGO_URI || process.env.MONGODB_URI;
 
   if (!mongoUri) {
-    throw new Error('MONGO_URI is missing. Add it to backend/.env or Vercel env.');
+    throw new Error('MONGO_URI (or MONGODB_URI) is missing. Add it to backend/.env or Vercel env.');
   }
 
   if (cached.conn) {
